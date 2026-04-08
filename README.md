@@ -8,3 +8,4 @@ Dark mode extensions may interfere with the preview. Please whitelist this site.
 
 ## TODO
 - PWA Support
+- Mobile Support
