@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Img2Gradient - 이미지에서 그라디언트 추출</title>
+    <meta name="description" content="이미지에서 SVG 및 CSS 그라디언트를 추출해보세요.">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">
+                <span class="gradient-text">Img2Gradient</span>
+            </div>
+            <p class="subtitle">이미지에서 그라디언트 추출</p>
+        </header>
+
+        <main>
+            <section class="editor-section">
+                <div id="dropzone" class="dropzone">
+                    <div id="upload-hint" class="upload-hint">
+                        <div class="icon">📸</div>
+                        <h3>이미지를 드래그하거나 클릭하세요</h3>
+                        <p>클립보드(Ctrl+V) 붙여넣기도 지원합니다</p>
+                        <input type="file" id="file-input" accept="image/*" hidden>
+                        <button id="select-btn" class="primary-btn">이미지 선택</button>
+                    </div>
+                    <div id="canvas-container" class="canvas-container hidden">
+                        <canvas id="main-canvas"></canvas>
+                    </div>
+
+                    <button id="reset-btn" class="icon-btn reset-btn hidden" title="이미지 초기화">✕</button>
+
+                    <div id="zoom-control" class="zoom-control hidden">
+                        <button id="zoom-out" class="zoom-btn">−</button>
+                        <span id="zoom-level-val">100%</span>
+                        <button id="zoom-in" class="zoom-btn">+</button>
+                    </div>
+                </div>
+
+                <div class="control-panel">
+                    <div class="control-group">
+                        <div class="label-row">
+                            <label for="stop-count">중단점 개수</label>
+                            <input type="number" id="stop-count-val" min="2" max="100" value="5">
+                        </div>
+                        <input type="range" id="stop-count" min="2" max="20" value="5">
+                    </div>
+                </div>
+            </section>
+
+            <section class="preview-section">
+                <div class="preview-card">
+                    <h3>Gradient Preview</h3>
+                    <div id="gradient-preview" class="gradient-preview"></div>
+                </div>
+
+                <div class="output-card">
+                    <h3>CSS Gradient Output</h3>
+                    <button id="copy-css" class="copy-btn hidden" title="CSS 복사">Copy</button>
+                    <pre id="css-output"><code>이미지를 업로드하고 드래그하여 포인트를 지정하세요.</code></pre>
+                </div>
+
+                <div class="output-card">
+                    <h3>SVG Gradient Output</h3>
+                    <button id="copy-svg" class="copy-btn hidden" title="SVG 복사">Copy</button>
+                    <pre id="svg-output"><code>이미지를 업로드하고 드래그하여 포인트를 지정하세요.</code></pre>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>TIP: Ctrl을 누른 채 드래그하여 각도를 15도 단위로 조정할 수 있어요.</p>
+            <p>모든 작업은 로컬에서 처리되며 이미지 등 정보를 일체 전송 및 저장하지 않아요.</p>
+            <p>Github에서 버그 제보, 기능 추가 및 수정 제안 등을 Issue로 올릴 수 있어요.</p>
+        </footer>
+    </div>
+
+    <div id="toast" class="toast hidden">복사되었습니다!</div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
