@@ -267,30 +267,35 @@ main {
   margin-bottom: 0.75rem;
 }
 
-#stop-count-val {
+#stop-count-val,
+#optimize-threshold-val {
   background: #1e293b;
   border: 1px solid var(--border);
   color: var(--text);
   padding: 0.25rem 0.5rem;
   border-radius: 0.5rem;
-  width: 60px;
+  width: 80px;
   font-weight: 600;
   text-align: center;
   outline: none;
   transition: border-color 0.2s;
 }
 
-#stop-count-val:focus {
+#stop-count-val:focus,
+#optimize-threshold-val:focus {
   border-color: var(--primary);
 }
 
 #stop-count-val::-webkit-inner-spin-button,
-#stop-count-val::-webkit-outer-spin-button {
+#stop-count-val::-webkit-outer-spin-button,
+#optimize-threshold-val::-webkit-inner-spin-button,
+#optimize-threshold-val::-webkit-outer-spin-button {
   -webkit-appearance: none;
   appearance: none;
   margin: 0;
 }
-#stop-count-val {
+#stop-count-val,
+#optimize-threshold-val {
   -moz-appearance: textfield;
 }
 
@@ -305,15 +310,6 @@ main {
   opacity: 0.9;
 }
 
-#optimize-threshold-val {
-  background: #1e293b;
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 0.1rem 0.4rem;
-  border-radius: 0.4rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
 
 input[type="range"] {
   width: 100%;

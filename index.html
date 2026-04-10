@@ -50,7 +50,7 @@
                     <div class="control-group">
                         <div class="label-row">
                             <label for="stop-count">중단점 개수</label>
-                            <input type="number" id="stop-count-val" min="2" max="1000" value="5">
+                            <input type="number" id="stop-count-val" min="2" value="5">
                         </div>
                         <input type="range" id="stop-count" min="2" max="20" value="5">
                     </div>
@@ -79,7 +79,7 @@
                     <div class="control-group mt-1">
                         <div class="label-row">
                             <label for="optimize-threshold">최적화 강도 (Threshold)</label>
-                            <span id="optimize-threshold-val">0</span>
+                            <input type="number" id="optimize-threshold-val" min="0" value="0">
                         </div>
                         <input type="range" id="optimize-threshold" min="0" max="100" step="0.5" value="0">
                         <p class="control-hint">중지점 개수를 지능적으로 줄입니다. (0 = 최적화 꺼짐)</p>

@@ -111,7 +111,6 @@ stopCountVal.addEventListener("input", (e) => {
 stopCountVal.addEventListener("blur", (e) => {
   let val = parseInt(e.target.value);
   if (isNaN(val) || val < 2) val = 2;
-  if (val > 1000) val = 1000;
   stopCountVal.value = val;
   stopCountInput.value = Math.max(2, Math.min(20, val));
   updateGradient();
@@ -125,7 +124,22 @@ colorSpaceInput.addEventListener("change", (e) => {
 });
 
 optimizeThresholdInput.addEventListener("input", (e) => {
-  optimizeThresholdVal.textContent = e.target.value;
+  optimizeThresholdVal.value = e.target.value;
+  updateGradient();
+});
+
+optimizeThresholdVal.addEventListener("input", (e) => {
+  let val = parseFloat(e.target.value);
+  if (isNaN(val)) return;
+  optimizeThresholdInput.value = val;
+  updateGradient();
+});
+
+optimizeThresholdVal.addEventListener("blur", (e) => {
+  let val = parseFloat(e.target.value);
+  if (isNaN(val) || val < 0) val = 0;
+  optimizeThresholdVal.value = val;
+  optimizeThresholdInput.value = val;
   updateGradient();
 });
 
@@ -582,7 +596,7 @@ function resetApp() {
   stopCountInput.value = 5;
   stopCountVal.value = 5;
   optimizeThresholdInput.value = 0;
-  optimizeThresholdVal.textContent = 0;
+  optimizeThresholdVal.value = 0;
   optimizeMethodInput.value = "simple";
   methodWarning.classList.add("hidden");
   colorSpaceInput.value = "";
