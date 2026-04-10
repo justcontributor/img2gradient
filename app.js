@@ -8,6 +8,7 @@ const uploadHint = document.getElementById("upload-hint");
 const canvasContainer = document.getElementById("canvas-container");
 const stopCountInput = document.getElementById("stop-count");
 const stopCountVal = document.getElementById("stop-count-val");
+const colorSpaceInput = document.getElementById("color-space");
 const gradientPreview = document.getElementById("gradient-preview");
 
 const zoomInBtn = document.getElementById("zoom-in");
@@ -104,6 +105,13 @@ stopCountVal.addEventListener("blur", (e) => {
   if (val > 100) val = 100;
   stopCountVal.value = val;
   stopCountInput.value = Math.max(2, Math.min(20, val));
+  updateGradient();
+});
+
+colorSpaceInput.addEventListener("change", (e) => {
+  if (e.target.value) {
+    showToast("색공간 옵션은 CSS 출력에만 적용되며,\nSVG에는 반영되지 않습니다.");
+  }
   updateGradient();
 });
 
@@ -476,7 +484,10 @@ function updateGradient() {
   draw();
 
   const cssStops = colors.map((c) => `${c.hex} ${c.t}%`).join(", ");
-  const cssString = `linear-gradient(to right, ${cssStops})`;
+  const colorSpace = colorSpaceInput.value;
+  const interpolation = colorSpace ? ` in ${colorSpace}` : "";
+  const cssString = `linear-gradient(to right${interpolation}, ${cssStops})`;
+  
   gradientPreview.style.background = cssString;
   cssOutput.innerText = `background: ${cssString};`;
 
@@ -519,6 +530,7 @@ function resetApp() {
 
   stopCountInput.value = 5;
   stopCountVal.value = 5;
+  colorSpaceInput.value = "none";
 }
 
 function copyToClipboard(text, message) {
