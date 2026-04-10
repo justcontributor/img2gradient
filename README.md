@@ -8,5 +8,4 @@ Dark mode extensions may interfere with the preview. Please whitelist this site.
 
 ## TODO
 - **Gradient Optimization**
-- PWA Support
 - Mobile Support
