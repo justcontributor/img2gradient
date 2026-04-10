@@ -1,7 +1,7 @@
 {
   "name": "Img2Gradient",
   "short_name": "Img2Gradient",
-  "description": "이미지에서 그라디언트 추출",
+  "description": "이미지에서 그라디언트 추출 및 최적화",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0f172a",

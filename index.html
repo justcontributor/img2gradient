@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Img2Gradient - 이미지에서 그라디언트 추출</title>
-    <meta name="description" content="이미지에서 SVG 및 CSS 그라디언트를 추출해보세요.">
+    <title>Img2Gradient - 이미지에서 그라디언트 추출 및 최적화</title>
+    <meta name="description" content="이미지에서 SVG 및 CSS 그라디언트를 추출하고, 최적화해보세요.">
     <meta name="theme-color" content="#7c3aed">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -20,7 +20,7 @@
             <div class="logo">
                 <span class="gradient-text">Img2Gradient</span>
             </div>
-            <p class="subtitle">이미지에서 그라디언트 추출</p>
+            <p class="subtitle">이미지에서 그라디언트 추출 및 최적화</p>
         </header>
 
         <main>
@@ -50,7 +50,7 @@
                     <div class="control-group">
                         <div class="label-row">
                             <label for="stop-count">중단점 개수</label>
-                            <input type="number" id="stop-count-val" min="2" max="100" value="5">
+                            <input type="number" id="stop-count-val" min="2" max="1000" value="5">
                         </div>
                         <input type="range" id="stop-count" min="2" max="20" value="5">
                     </div>
@@ -75,13 +75,42 @@
                             <option value="prophoto-rgb">ProPhoto RGB</option>
                         </select>
                     </div>
+
+                    <div class="control-group mt-1">
+                        <div class="label-row">
+                            <label for="optimize-threshold">최적화 강도 (Threshold)</label>
+                            <span id="optimize-threshold-val">0</span>
+                        </div>
+                        <input type="range" id="optimize-threshold" min="0" max="100" step="0.5" value="0">
+                        <p class="control-hint">중지점 개수를 지능적으로 줄입니다. (0 = 최적화 꺼짐)</p>
+                    </div>
+
+                    <div class="control-group mt-1">
+                        <div class="label-row">
+                            <label for="optimize-method">최적화 방식</label>
+                        </div>
+                        <select id="optimize-method" class="select-input">
+                            <option value="simple">Simple (DP)</option>
+                            <option value="greedy">Greedy (Similarity)</option>
+                            <option value="adaptive">Adaptive (Moving)</option>
+                        </select>
+                        <p id="method-warning" class="control-hint warning-text hidden">최적화 방식이 Simple이 아닌 경우 다른 속성 변경 시
+                            렉이 걸릴 수 있습니다.</p>
+                    </div>
                 </div>
             </section>
 
             <section class="preview-section">
                 <div class="preview-card">
                     <h3>Gradient Preview</h3>
-                    <div id="gradient-preview" class="gradient-preview"></div>
+                    <div id="gradient-preview" class="gradient-preview">
+                        <div id="preview-original" class="preview-segment hidden">
+                            <span class="preview-label">Original</span>
+                        </div>
+                        <div id="preview-optimized" class="preview-segment">
+                            <span class="preview-label bottom hidden" id="optimized-label">Optimized</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="output-card">
@@ -107,7 +136,7 @@
 
     <div id="toast" class="toast hidden">복사되었습니다!</div>
 
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

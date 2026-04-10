@@ -1,3 +1,5 @@
+import { optimizeStops } from "./optimizer.js";
+
 const dropzone = document.getElementById("dropzone");
 const fileInput = document.getElementById("file-input");
 const selectBtn = document.getElementById("select-btn");
@@ -9,7 +11,14 @@ const canvasContainer = document.getElementById("canvas-container");
 const stopCountInput = document.getElementById("stop-count");
 const stopCountVal = document.getElementById("stop-count-val");
 const colorSpaceInput = document.getElementById("color-space");
+const optimizeThresholdInput = document.getElementById("optimize-threshold");
+const optimizeThresholdVal = document.getElementById("optimize-threshold-val");
+const optimizeMethodInput = document.getElementById("optimize-method");
+const methodWarning = document.getElementById("method-warning");
 const gradientPreview = document.getElementById("gradient-preview");
+const previewOriginal = document.getElementById("preview-original");
+const previewOptimized = document.getElementById("preview-optimized");
+const optimizedLabel = document.getElementById("optimized-label");
 
 const zoomInBtn = document.getElementById("zoom-in");
 const zoomOutBtn = document.getElementById("zoom-out");
@@ -102,7 +111,7 @@ stopCountVal.addEventListener("input", (e) => {
 stopCountVal.addEventListener("blur", (e) => {
   let val = parseInt(e.target.value);
   if (isNaN(val) || val < 2) val = 2;
-  if (val > 100) val = 100;
+  if (val > 1000) val = 1000;
   stopCountVal.value = val;
   stopCountInput.value = Math.max(2, Math.min(20, val));
   updateGradient();
@@ -111,6 +120,20 @@ stopCountVal.addEventListener("blur", (e) => {
 colorSpaceInput.addEventListener("change", (e) => {
   if (e.target.value) {
     showToast("색공간 옵션은 CSS 출력에만 적용되며,\nSVG에는 반영되지 않습니다.");
+  }
+  updateGradient();
+});
+
+optimizeThresholdInput.addEventListener("input", (e) => {
+  optimizeThresholdVal.textContent = e.target.value;
+  updateGradient();
+});
+
+optimizeMethodInput.addEventListener("change", (e) => {
+  if (e.target.value !== "simple") {
+    methodWarning.classList.remove("hidden");
+  } else {
+    methodWarning.classList.add("hidden");
   }
   updateGradient();
 });
@@ -477,22 +500,50 @@ function updateGradient() {
     const sampleY = Math.max(0, Math.min(canvas.height - 1, Math.floor(y)));
 
     const pixel = ctx.getImageData(sampleX, sampleY, 1, 1).data;
-    const hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
-    colors.push({ hex, t: (t * 100).toFixed(1) });
+    colors.push({ 
+      r: pixel[0], 
+      g: pixel[1], 
+      b: pixel[2], 
+      hex: rgbToHex(pixel[0], pixel[1], pixel[2]),
+      t: (t * 100) 
+    });
   }
+
+  // Apply Optimization
+  const threshold = parseFloat(optimizeThresholdInput.value);
+  const method = optimizeMethodInput.value;
+  const optimizedColors = optimizeStops(colors, threshold, method);
 
   draw();
 
-  const cssStops = colors.map((c) => `${c.hex} ${c.t}%`).join(", ");
   const colorSpace = colorSpaceInput.value;
   const interpolation = colorSpace ? ` in ${colorSpace}` : "";
-  const cssString = `linear-gradient(to right${interpolation}, ${cssStops})`;
   
-  gradientPreview.style.background = cssString;
-  cssOutput.innerText = `background: ${cssString};`;
+  // Original Gradient (for comparison)
+  const originalStopsCss = colors.map((c) => `${c.hex} ${c.t.toFixed(3)}%`).join(", ");
+  const originalCssString = `linear-gradient(to right${interpolation}, ${originalStopsCss})`;
+  
+  // Optimized Gradient
+  const optimizedStopsCss = optimizedColors.map((c) => `${c.hex} ${c.t.toFixed(3)}%`).join(", ");
+  const optimizedCssString = `linear-gradient(to right${interpolation}, ${optimizedStopsCss})`;
+  
+  // UI Updates
+  if (threshold > 0) {
+    previewOriginal.classList.remove("hidden");
+    previewOriginal.style.background = originalCssString;
+    previewOptimized.style.background = optimizedCssString;
+    optimizedLabel.classList.remove("hidden");
+    optimizedLabel.textContent = `Optimized (${optimizedColors.length} stops)`;
+  } else {
+    previewOriginal.classList.add("hidden");
+    previewOptimized.style.background = optimizedCssString;
+    optimizedLabel.classList.add("hidden");
+  }
 
-  const svgStops = colors
-    .map((c) => `  <stop offset="${c.t}%" stop-color="${c.hex}" />`)
+  cssOutput.innerText = `background: ${optimizedCssString};`;
+
+  const svgStops = optimizedColors
+    .map((c) => `  <stop offset="${c.t.toFixed(3)}%" stop-color="${c.hex}" />`)
     .join("\n");
   const svgTemplate = `<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -530,7 +581,13 @@ function resetApp() {
 
   stopCountInput.value = 5;
   stopCountVal.value = 5;
-  colorSpaceInput.value = "none";
+  optimizeThresholdInput.value = 0;
+  optimizeThresholdVal.textContent = 0;
+  optimizeMethodInput.value = "simple";
+  methodWarning.classList.add("hidden");
+  colorSpaceInput.value = "";
+  previewOriginal.classList.add("hidden");
+  optimizedLabel.classList.add("hidden");
 }
 
 function copyToClipboard(text, message) {
