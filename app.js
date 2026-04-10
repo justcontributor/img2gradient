@@ -29,6 +29,10 @@ let hasImage = false;
 let zoomLevel = 1.0;
 let panX = 0;
 let panY = 0;
+let initialPinchDistance = null;
+let initialPinchZoom = null;
+let lastTouchPos = { x: 0, y: 0 };
+let touchWaitTimer = null;
 
 // Image selection
 selectBtn.addEventListener("click", () => fileInput.click());
@@ -136,52 +140,52 @@ canvasContainer.addEventListener(
   { passive: false },
 );
 
-function adjustZoom(delta, centerX = 0, centerY = 0) {
-  const oldZoom = zoomLevel;
-  zoomLevel = Math.max(0.05, Math.min(10, zoomLevel + delta));
+let isPinching = false;
+let pinchData = {
+  initialDistance: 0,
+  initialScale: 1,
+  initialMidpoint: { x: 0, y: 0 },
+  initialPan: { x: 0, y: 0 }
+};
 
-  if (oldZoom !== zoomLevel) {
-    const ratio = zoomLevel / oldZoom;
-
-    panX = centerX - (centerX - panX) * ratio;
-    panY = centerY - (centerY - panY) * ratio;
-
-    zoomLevelVal.textContent = Math.round(zoomLevel * 100) + "%";
-    updateCanvasDisplay();
-    updateGradient();
-  }
+function getMidpoint(t1, t2) {
+  return {
+    x: (t1.clientX + t2.clientX) / 2,
+    y: (t1.clientY + t2.clientY) / 2
+  };
 }
 
-// Canvas drag logic
-canvas.addEventListener("mousedown", (e) => {
-  if (!hasImage) return;
+function startPointDragging(e) {
+  if (!hasImage || isPinching) return;
   isDragging = true;
-
-  const coord = getCanvasCoordinates(e);
+  const pos = e.touches ? e.touches[0] : e;
+  const coord = getCanvasCoordinates(pos);
   startPoint = coord;
   endPoint = { ...startPoint };
   updateGradient();
-});
+}
 
-window.addEventListener("mousemove", (e) => {
-  if (!isDragging) return;
+function movePointDragging(e) {
+  if (!isDragging || isPinching) return;
 
-  let coord = getCanvasCoordinates(e);
+  if (e.touches && e.touches.length > 1) {
+    isDragging = false;
+    return;
+  }
+
+  const pos = e.touches ? e.touches[0] : e;
+  let coord = getCanvasCoordinates(pos);
   let targetX = coord.x;
   let targetY = coord.y;
 
-  if (e.ctrlKey) {
+  if (!e.touches && e.ctrlKey) {
     const dx = targetX - startPoint.x;
     const dy = targetY - startPoint.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
     let angle = Math.atan2(dy, dx);
-
-    // Snap to nearest 15 degrees
     const snapDegrees = 15;
-    const angleDegrees = angle * (180 / Math.PI);
-    const snappedDegrees = Math.round(angleDegrees / snapDegrees) * snapDegrees;
+    const snappedDegrees = Math.round(angle * (180 / Math.PI) / snapDegrees) * snapDegrees;
     const snappedAngle = snappedDegrees * (Math.PI / 180);
-
     targetX = startPoint.x + Math.cos(snappedAngle) * dist;
     targetY = startPoint.y + Math.sin(snappedAngle) * dist;
   }
@@ -191,11 +195,128 @@ window.addEventListener("mousemove", (e) => {
     y: Math.max(0, Math.min(canvas.height, targetY)),
   };
   updateGradient();
+  if (e.touches) e.preventDefault();
+}
+
+function stopPointDragging() {
+  isDragging = false;
+}
+
+// Canvas Point Drag Events
+canvas.addEventListener("mousedown", startPointDragging);
+canvas.addEventListener("touchstart", (e) => {
+  if (e.touches.length === 1) {
+    if (touchWaitTimer) clearTimeout(touchWaitTimer);
+    touchWaitTimer = setTimeout(() => {
+      if (!isPinching) startPointDragging(e);
+      touchWaitTimer = null;
+    }, 100);
+    e.preventDefault();
+  }
+}, { passive: false });
+
+window.addEventListener("mousemove", movePointDragging);
+window.addEventListener("touchmove", (e) => {
+  if (isDragging) movePointDragging(e);
+}, { passive: false });
+
+window.addEventListener("mouseup", stopPointDragging);
+window.addEventListener("touchend", (e) => {
+  stopPointDragging();
+  if (e.touches.length === 0) {
+    isPinching = false;
+  }
 });
 
-window.addEventListener("mouseup", () => {
-  isDragging = false;
-});
+// Canvas Container Viewport Events (Pan & Zoom)
+canvasContainer.addEventListener(
+  "touchstart",
+  (e) => {
+    if (!hasImage) return;
+
+    if (e.touches.length >= 2) {
+      if (touchWaitTimer) {
+        clearTimeout(touchWaitTimer);
+        touchWaitTimer = null;
+      }
+      isDragging = false;
+      isPinching = true;
+
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      pinchData.initialDistance = getTouchDistance(e.touches);
+      const mid = getMidpoint(t1, t2);
+      const rect = canvasContainer.getBoundingClientRect();
+      pinchData.initialMidpoint = {
+        x: mid.x - rect.left - rect.width / 2,
+        y: mid.y - rect.top - rect.height / 2
+      };
+      pinchData.initialScale = zoomLevel;
+      pinchData.initialPan = { x: panX, y: panY };
+    } else if (e.touches.length === 1) {
+      lastTouchPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  },
+  { passive: false },
+);
+
+canvasContainer.addEventListener(
+  "touchmove",
+  (e) => {
+    if (!hasImage) return;
+
+    if (e.touches.length >= 2) {
+      isDragging = false;
+      isPinching = true;
+      e.preventDefault();
+
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const currentDist = getTouchDistance(e.touches);
+      const currentMidRaw = getMidpoint(t1, t2);
+      const rect = canvasContainer.getBoundingClientRect();
+      const currentMid = {
+        x: currentMidRaw.x - rect.left - rect.width / 2,
+        y: currentMidRaw.y - rect.top - rect.height / 2
+      };
+
+      if (pinchData.initialDistance > 0) {
+        const scaleRatio = currentDist / pinchData.initialDistance;
+        zoomLevel = Math.max(0.05, Math.min(20, pinchData.initialScale * scaleRatio));
+
+        const ratio = zoomLevel / pinchData.initialScale;
+        panX = currentMid.x - (pinchData.initialMidpoint.x - pinchData.initialPan.x) * ratio;
+        panY = currentMid.y - (pinchData.initialMidpoint.y - pinchData.initialPan.y) * ratio;
+
+        zoomLevelVal.textContent = Math.round(zoomLevel * 100) + "%";
+        updateCanvasDisplay();
+        updateGradient();
+      }
+    }
+  },
+  { passive: false },
+);
+
+function getTouchDistance(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function adjustZoom(delta, centerX = 0, centerY = 0) {
+  const oldZoom = zoomLevel;
+  const sensitivity = 0.8;
+  zoomLevel = Math.max(0.05, Math.min(20, zoomLevel + delta * zoomLevel * sensitivity));
+
+  if (oldZoom !== zoomLevel) {
+    const ratio = zoomLevel / oldZoom;
+    panX = centerX - (centerX - panX) * ratio;
+    panY = centerY - (centerY - panY) * ratio;
+    zoomLevelVal.textContent = Math.round(zoomLevel * 100) + "%";
+    updateCanvasDisplay();
+    updateGradient();
+  }
+}
 
 function getCanvasCoordinates(e) {
   const rect = canvas.getBoundingClientRect();
